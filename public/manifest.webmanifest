@@ -1,0 +1,21 @@
+{
+  "name": "汉谜达人",
+  "short_name": "汉谜达人",
+  "description": "基于 CC-CEDICT 词库的中文连线找词小游戏",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7ff",
+  "theme_color": "#6f94e6",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
