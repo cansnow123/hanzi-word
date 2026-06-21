@@ -49,7 +49,23 @@ export type GameResult = {
 
 export type DictionaryIndex = {
   words: string[];
+  wordMeta: DictionaryWordMeta[];
+  lengthBuckets: Record<string, number[]>;
+  shapeBuckets: Record<string, number[]>;
+  headBuckets: Record<string, number[]>;
+  tailBuckets: Record<string, number[]>;
+  charBuckets: Record<string, number[]>;
   metadataVersion: string;
+};
+
+export type DictionaryWordMeta = {
+  length: number;
+  chars: string[];
+  uniqueChars: string[];
+  headChar: string;
+  tailChar: string;
+  charHash: string;
+  shapeKey: string;
 };
 
 export type DailyWordInfo = {

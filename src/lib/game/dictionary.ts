@@ -1,6 +1,6 @@
 import dictionaryData from "@/data/dictionary.generated.json";
 import { DAILY_WORD_BANK } from "./constants";
-import type { DailyWordInfo, DictionaryIndex } from "./types";
+import type { DailyWordInfo, DictionaryIndex, DictionaryWordMeta } from "./types";
 
 type TrieNode = {
   children: Map<string, TrieNode>;
@@ -15,6 +15,15 @@ export function getDictionaryIndex(): DictionaryIndex {
 
 export function getWordList() {
   return getDictionaryIndex().words;
+}
+
+export function getWordMetaList(): DictionaryWordMeta[] {
+  return getDictionaryIndex().wordMeta;
+}
+
+export function getBucket(bucket: keyof Pick<DictionaryIndex, "lengthBuckets" | "shapeBuckets" | "headBuckets" | "tailBuckets" | "charBuckets">, key: string) {
+  const index = getDictionaryIndex();
+  return index[bucket][key] ?? [];
 }
 
 export function buildTrie(words: string[]) {
