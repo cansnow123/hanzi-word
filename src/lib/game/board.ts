@@ -29,15 +29,7 @@ export function createBoard(config: GameConfig, dayKey?: string): BoardState {
       }
     }
 
-    const cells = chars.map<Cell>((char, index) => ({
-      id: index,
-      row: Math.floor(index / config.gridSize),
-      col: index % config.gridSize,
-      char,
-    }));
-
-    const adjacencyMap = buildAdjacencyMap(config.gridSize);
-    const validWords = solveBoard(cells, adjacencyMap, trie);
+    const { cells, adjacencyMap, validWords } = buildBoardStateFromChars(chars, config.gridSize, trie);
     const foundWords = Object.keys(validWords);
 
     if (foundWords.length >= MIN_VALID_WORDS[config.gridSize]) {
@@ -215,14 +207,26 @@ function createFallbackBoard(gridSize: GridSize, seed: number): BoardState {
             "子",
           ];
 
-  const cells = preset.map<Cell>((char, index) => ({
-    id: index,
-    row: Math.floor(index / gridSize),
-    col: index % gridSize,
-    char,
-  }));
-  const adjacencyMap = buildAdjacencyMap(gridSize);
-  const validWords = solveBoard(cells, adjacencyMap, getTrie());
+  const trie = getTrie();
+  const rng = createRng(seed);
+  const fallbackMinWords = Math.max(8, Math.floor(MIN_VALID_WORDS[gridSize] * 0.7));
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    const shuffledChars = shuffleChars([...preset], rng);
+    const candidate = buildBoardStateFromChars(shuffledChars, gridSize, trie);
+    if (Object.keys(candidate.validWords).length >= fallbackMinWords) {
+      return {
+        ...candidate,
+        hintPool: Object.values(candidate.validWords)
+          .slice(0, 8)
+          .map((paths) => paths[0]),
+        seed,
+      };
+    }
+  }
+
+  const transformedChars = applySymmetryTransform(preset, gridSize, seed % 8);
+  const { cells, adjacencyMap, validWords } = buildBoardStateFromChars(transformedChars, gridSize, trie);
 
   return {
     cells,
@@ -233,4 +237,70 @@ function createFallbackBoard(gridSize: GridSize, seed: number): BoardState {
       .map((paths) => paths[0]),
     seed,
   };
+}
+
+function buildBoardStateFromChars(
+  chars: string[],
+  gridSize: GridSize,
+  trie: ReturnType<typeof getTrie>,
+) {
+  const cells = chars.map<Cell>((char, index) => ({
+    id: index,
+    row: Math.floor(index / gridSize),
+    col: index % gridSize,
+    char,
+  }));
+  const adjacencyMap = buildAdjacencyMap(gridSize);
+  const validWords = solveBoard(cells, adjacencyMap, trie);
+
+  return {
+    cells,
+    adjacencyMap,
+    validWords,
+  };
+}
+
+function shuffleChars(chars: string[], rng: () => number) {
+  for (let index = chars.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomInt(rng, index + 1);
+    [chars[index], chars[swapIndex]] = [chars[swapIndex], chars[index]];
+  }
+  return chars;
+}
+
+function applySymmetryTransform(chars: string[], gridSize: GridSize, variant: number) {
+  const output = new Array<string>(chars.length);
+
+  for (let row = 0; row < gridSize; row += 1) {
+    for (let col = 0; col < gridSize; col += 1) {
+      const sourceIndex = row * gridSize + col;
+      const [nextRow, nextCol] = mapSymmetry(row, col, gridSize, variant);
+      output[nextRow * gridSize + nextCol] = chars[sourceIndex];
+    }
+  }
+
+  return output;
+}
+
+function mapSymmetry(row: number, col: number, gridSize: GridSize, variant: number) {
+  const last = gridSize - 1;
+
+  switch (variant) {
+    case 0:
+      return [row, col] as const;
+    case 1:
+      return [col, last - row] as const;
+    case 2:
+      return [last - row, last - col] as const;
+    case 3:
+      return [last - col, row] as const;
+    case 4:
+      return [row, last - col] as const;
+    case 5:
+      return [last - row, col] as const;
+    case 6:
+      return [col, row] as const;
+    default:
+      return [last - col, last - row] as const;
+  }
 }
